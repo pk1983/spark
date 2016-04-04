@@ -320,6 +320,11 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-test-tags_${scala.binary.version}</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.outr.javasysmon</groupId>
+      <artifactId>javasysmon_2.10</artifactId>
+      <version>0.3.4</version>
+    </dependency>
   </dependencies>
   <build>
     <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
