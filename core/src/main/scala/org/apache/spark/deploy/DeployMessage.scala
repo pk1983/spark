@@ -31,7 +31,10 @@ private[deploy] sealed trait DeployMessage extends Serializable
 
 /** Contains messages sent between Scheduler endpoint nodes. */
 private[deploy] object DeployMessages {
-
+  /** Spark On Entropy **/
+  // Worker Self
+  case class  UpdateCpuHistory() extends DeployMessage
+  /** Spark On Entropy **/
   // Worker to Master
 
   case class RegisterWorker(

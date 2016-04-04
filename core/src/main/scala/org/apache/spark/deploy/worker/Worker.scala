@@ -20,11 +20,13 @@ package org.apache.spark.deploy.worker
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.{Date, UUID}
+import java.util.{Calendar, Date, UUID}
 import java.util.concurrent._
 import java.util.concurrent.{Future => JFuture, ScheduledFuture => JScheduledFuture}
 
-import scala.collection.mutable.{HashMap, HashSet, LinkedHashMap}
+import com.jezhumble.javasysmon.{CpuTimes, JavaSysMon}
+
+import scala.collection.mutable.{ListBuffer, HashMap, HashSet, LinkedHashMap}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Random, Success}
 import scala.util.control.NonFatal
@@ -158,6 +160,35 @@ private[deploy] class Worker(
   def coresFree: Int = cores - coresUsed
   def memoryFree: Int = memory - memoryUsed
 
+  /** Spark On Entropy **/
+  val sysMonitor = new JavaSysMon()
+  // Total cores in the system
+  val coresTotal:Int = sysMonitor.numCpus()
+  // Execution speed per core in MHz
+  val coresSpeed:Long = sysMonitor.cpuFrequencyInHz()/1000000
+
+  // Cpu usage change history
+  val cpuHistory = new ListBuffer[Float]()
+  // History update interval in ms
+  val cpuHistoryInterval:Int = 1000
+  // Max history record
+  val cpuHistoryMax: Int = 60
+
+  var preCpuTime:CpuTimes = _
+
+  var updateCpuHistoryTask:ScheduledFuture[_] = _
+  def updateCpuHistory(): Unit = {
+    while (cpuHistory.size >cpuHistoryMax) {
+      cpuHistory.remove(0)
+    }
+    val currentCpuTime: CpuTimes =sysMonitor.cpuTimes()
+    val currentCpuUsage: Float =currentCpuTime.getCpuUsage(preCpuTime)
+    logInfo("CPU Usage:"+ currentCpuUsage)
+    cpuHistory+=currentCpuUsage
+    preCpuTime=currentCpuTime
+  }
+  /** Spark On Entropy **/
+
   private def createWorkDir() {
     workDir = Option(workDirPath).map(new File(_)).getOrElse(new File(sparkHome, "work"))
     try {
@@ -195,6 +226,15 @@ private[deploy] class Worker(
     metricsSystem.start()
     // Attach the worker metrics servlet handler to the web ui after the metrics system is started.
     metricsSystem.getServletHandlers.foreach(webUi.attachHandler)
+    /** Spark On Entropy **/
+    preCpuTime = sysMonitor.cpuTimes()
+    updateCpuHistoryTask = forwordMessageScheduler.scheduleAtFixedRate(new Runnable {
+      override def run(): Unit = Utils.tryLogNonFatalError {
+        self.send(UpdateCpuHistory)
+      }
+    },cpuHistoryInterval,cpuHistoryInterval, TimeUnit.MILLISECONDS)
+    /** Spark On Entropy **/
+
   }
 
   private def changeMaster(masterRef: RpcEndpointRef, uiUrl: String) {
@@ -392,6 +432,10 @@ private[deploy] class Worker(
   }
 
   override def receive: PartialFunction[Any, Unit] = synchronized {
+    /** Spark On Entropy **/
+    case UpdateCpuHistory =>
+      updateCpuHistory()
+    /** Spark On Entropy **/
     case SendHeartbeat =>
       if (connected) { sendToMaster(Heartbeat(workerId, self)) }
 
