@@ -167,8 +167,9 @@ private[deploy] class Worker(
   // Execution speed per core in MHz
   val coresSpeed:Long = sysMonitor.cpuFrequencyInHz()/1000000
 
-  // Cpu usage change history
+  // Cpu usage history
   val cpuHistory = new ListBuffer[Float]()
+
   // History update interval in ms
   val cpuHistoryInterval:Int = 1000
   // Max history record
@@ -185,7 +186,22 @@ private[deploy] class Worker(
     val currentCpuUsage: Float =currentCpuTime.getCpuUsage(preCpuTime)
     logInfo("CPU Usage:"+ currentCpuUsage)
     cpuHistory+=currentCpuUsage
+    var workerRanking =0f
+    if(cpuHistory.nonEmpty) {
+      workerRanking = caculateWorkerRanking()
+    }
     preCpuTime=currentCpuTime
+    // Send average cpu utilization update to master
+    if (connected) {
+      sendToMaster(UpdateWorkerAvgCpuUtilization(workerId, self,workerRanking))
+      logInfo("Send Worker Ranking to Master:" + workerRanking)
+    }
+  }
+
+  def caculateWorkerRanking(): Float = {
+    // Use your own algoritham to caculate ranking, this is an example only
+    val ranking =cpuHistory.sum / cpuHistory.size
+    ranking
   }
   /** Spark On Entropy **/
 

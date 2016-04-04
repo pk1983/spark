@@ -217,6 +217,24 @@ private[deploy] class Master(
   }
 
   override def receive: PartialFunction[Any, Unit] = {
+    /** Spark On Entropy **/
+    case UpdateWorkerAvgCpuUtilization(workerId,worker,workerRanking) =>{
+      idToWorker.get(workerId) match {
+        case Some(workerInfo) =>
+          workerInfo.ranking=workerRanking
+          logInfo("Receive ranking updated from Worker ("+ worker.address.toSparkURL +"):"+workerInfo.ranking)
+        case None =>
+          if (workers.map(_.id).contains(workerId)) {
+            logWarning(s"Got heartbeat from unregistered worker $workerId." +
+              " Asking it to re-register.")
+            worker.send(ReconnectWorker(masterUrl))
+          } else {
+            logWarning(s"Got heartbeat from unregistered worker $workerId." +
+              " This worker was never registered, so ignoring the heartbeat.")
+          }
+      }
+    }
+    /** Spark On Entropy **/
     case ElectedLeader => {
       val (storedApps, storedDrivers, storedWorkers) = persistenceEngine.readPersistedData(rpcEnv)
       state = if (storedApps.isEmpty && storedDrivers.isEmpty && storedWorkers.isEmpty) {

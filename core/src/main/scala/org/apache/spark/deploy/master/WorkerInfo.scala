@@ -42,6 +42,9 @@ private[spark] class WorkerInfo(
   @transient var memoryUsed: Int = _
 
   @transient var lastHeartbeat: Long = _
+  /** Spark On Entropy **/
+  @transient var ranking: Float= _
+  /** Spark On Entropy **/
 
   init()
 
@@ -60,6 +63,9 @@ private[spark] class WorkerInfo(
     coresUsed = 0
     memoryUsed = 0
     lastHeartbeat = System.currentTimeMillis()
+    /** Spark On Entropy **/
+    ranking = 0f
+    /** Spark On Entropy **/
   }
 
   def hostPort: String = {
