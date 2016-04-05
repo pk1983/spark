@@ -193,7 +193,7 @@ private[deploy] class Worker(
     preCpuTime=currentCpuTime
     // Send average cpu utilization update to master
     if (connected) {
-      sendToMaster(UpdateWorkerAvgCpuUtilization(workerId, self,workerRanking))
+      sendToMaster(UpdateWorkerRanking(workerId, self,workerRanking))
       logInfo("Send Worker Ranking to Master:" + workerRanking)
     }
   }

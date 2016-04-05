@@ -27,6 +27,8 @@ import org.apache.spark.deploy.worker.{DriverRunner, ExecutorRunner}
 import org.apache.spark.rpc.RpcEndpointRef
 import org.apache.spark.util.Utils
 
+import scala.collection.mutable
+
 private[deploy] sealed trait DeployMessage extends Serializable
 
 /** Contains messages sent between Scheduler endpoint nodes. */
@@ -35,7 +37,9 @@ private[deploy] object DeployMessages {
   // Worker internal
   case class  UpdateCpuHistory() extends DeployMessage
   // Worker to Master
-  case class UpdateWorkerAvgCpuUtilization(workerId: String, worker: RpcEndpointRef,workerRanking: Float) extends  DeployMessage
+  case class UpdateWorkerRanking(workerId: String, worker: RpcEndpointRef,workerRanking: Float) extends  DeployMessage
+  // Master to App
+  case class UpdateAllWorkerRanking(workerToRanking:mutable.HashMap[String,Float]) extends DeployMessage
   /** Spark On Entropy **/
   // Worker to Master
 

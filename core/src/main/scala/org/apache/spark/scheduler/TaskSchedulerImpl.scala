@@ -121,6 +121,10 @@ private[spark] class TaskSchedulerImpl(
   // This is a var so that we can reset it for testing purposes.
   private[spark] var taskResultGetter = new TaskResultGetter(sc.env, this)
 
+  /** Spark On Entropy **/
+  var workerToRanking = new HashMap[String,Float]
+  /** Spark On Entropy **/
+
   override def setDAGScheduler(dagScheduler: DAGScheduler) {
     this.dagScheduler = dagScheduler
   }
@@ -296,6 +300,12 @@ private[spark] class TaskSchedulerImpl(
       }
     }
 
+    /** Spark On Entropy **/
+    workerToRanking.foreach((workerRanking)=>{
+      logInfo("Worker ID:" + workerRanking._1 + ", Ranking: " + workerRanking._2)
+    })
+    val sortedOffers = offers.sortWith((o1,o2) => workerToRanking(o1.host)>workerToRanking(o2.host))
+    /** Spark On Entropy **/
     // Randomly shuffle offers to avoid always placing tasks on the same set of workers.
     val shuffledOffers = Random.shuffle(offers)
     // Build a list of tasks to assign to each worker.

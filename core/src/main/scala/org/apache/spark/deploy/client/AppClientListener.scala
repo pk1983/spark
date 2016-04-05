@@ -17,6 +17,8 @@
 
 package org.apache.spark.deploy.client
 
+import scala.collection.mutable
+
 /**
  * Callbacks invoked by deploy client when various events happen. There are currently four events:
  * connecting to the cluster, disconnecting, being given an executor, and having an executor
@@ -36,4 +38,8 @@ private[spark] trait AppClientListener {
   def executorAdded(fullId: String, workerId: String, hostPort: String, cores: Int, memory: Int)
 
   def executorRemoved(fullId: String, message: String, exitStatus: Option[Int]): Unit
+
+  /** Spark On Entropy **/
+  def updateAllWorkerRanking(workerToRanking:mutable.HashMap[String,Float])
+  /** Spark On Entropy **/
 }

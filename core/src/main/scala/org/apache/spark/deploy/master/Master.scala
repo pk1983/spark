@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.{ConcurrentHashMap, ScheduledFuture, TimeUnit}
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -138,6 +139,10 @@ private[deploy] class Master(
   private var restServer: Option[StandaloneRestServer] = None
   private var restServerBoundPort: Option[Int] = None
 
+  /** Spark On Entropy **/
+  val workerToRanking = new HashMap[String,Float]
+  /** Spark On Entropy **/
+
   override def onStart(): Unit = {
     logInfo("Starting Spark master at " + masterUrl)
     logInfo(s"Running Spark version ${org.apache.spark.SPARK_VERSION}")
@@ -218,11 +223,16 @@ private[deploy] class Master(
 
   override def receive: PartialFunction[Any, Unit] = {
     /** Spark On Entropy **/
-    case UpdateWorkerAvgCpuUtilization(workerId,worker,workerRanking) =>{
+    case UpdateWorkerRanking(workerId,worker,workerRanking) =>{
       idToWorker.get(workerId) match {
         case Some(workerInfo) =>
           workerInfo.ranking=workerRanking
+          workerToRanking(workerInfo.host)=workerRanking
           logInfo("Receive ranking updated from Worker ("+ worker.address.toSparkURL +"):"+workerInfo.ranking)
+          for(app<-idToApp){
+            logInfo("Update All worker's ranking on App:" + app._1)
+            app._2.driver.send(UpdateAllWorkerRanking(workerToRanking))
+          }
         case None =>
           if (workers.map(_.id).contains(workerId)) {
             logWarning(s"Got heartbeat from unregistered worker $workerId." +

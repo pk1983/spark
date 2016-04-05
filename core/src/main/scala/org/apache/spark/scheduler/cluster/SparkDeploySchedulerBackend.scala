@@ -28,6 +28,8 @@ import org.apache.spark.rpc.RpcEndpointAddress
 import org.apache.spark.scheduler._
 import org.apache.spark.util.Utils
 
+import scala.collection.mutable
+
 private[spark] class SparkDeploySchedulerBackend(
     scheduler: TaskSchedulerImpl,
     sc: SparkContext,
@@ -49,6 +51,12 @@ private[spark] class SparkDeploySchedulerBackend(
 
   private val maxCores = conf.getOption("spark.cores.max").map(_.toInt)
   private val totalExpectedCores = maxCores.getOrElse(0)
+
+  override def updateAllWorkerRanking(workerToRanking:mutable.HashMap[String,Float])={
+    /** Spark On Entropy **/
+    scheduler.workerToRanking = workerToRanking
+    /** Spark On Entropy **/
+  }
 
   override def start() {
     super.start()

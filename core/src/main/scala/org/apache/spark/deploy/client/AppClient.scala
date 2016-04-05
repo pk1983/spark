@@ -155,6 +155,10 @@ private[spark] class AppClient(
     }
 
     override def receive: PartialFunction[Any, Unit] = {
+      /** Spark On Entropy **/
+      case UpdateAllWorkerRanking(workerToRanking) =>
+        listener.updateAllWorkerRanking(workerToRanking)
+      /** Spark On Entropy **/
       case RegisteredApplication(appId_, masterRef) =>
         // FIXME How to handle the following cases?
         // 1. A master receives multiple registrations and sends back multiple
