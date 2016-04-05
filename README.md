@@ -1,97 +1,58 @@
-# Apache Spark
-
-Spark is a fast and general cluster computing system for Big Data. It provides
-high-level APIs in Scala, Java, Python, and R, and an optimized engine that
-supports general computation graphs for data analysis. It also supports a
-rich set of higher-level tools including Spark SQL for SQL and DataFrames,
-MLlib for machine learning, GraphX for graph processing,
-and Spark Streaming for stream processing.
-
-<http://spark.apache.org/>
-
-
-## Online Documentation
-
-You can find the latest Spark documentation, including a programming
-guide, on the [project web page](http://spark.apache.org/documentation.html)
-and [project wiki](https://cwiki.apache.org/confluence/display/SPARK).
-This README file only contains basic setup instructions.
-
 ## Building Spark
 
-Spark is built using [Apache Maven](http://maven.apache.org/).
 To build Spark and its example programs, run:
 
-    build/mvn -DskipTests clean package
+    sbt assembly
 
-(You do not need to do this if you downloaded a pre-built package.)
-More detailed documentation is available from the project site, at
-["Building Spark"](http://spark.apache.org/docs/latest/building-spark.html).
-For developing Spark using an IDE, see [Eclipse](https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-Eclipse)
-and [IntelliJ](https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools#UsefulDeveloperTools-IntelliJ).
+## Run Spark on Windows in standalone mode 
 
-## Interactive Scala Shell
+If we don’t want with Hadoop, we just want to run it in standalone mode on windows.
+Here we’ll see how we can run Spark on Windows machine.
 
-The easiest way to start using Spark is through the Scala shell:
+Prerequisites:
 
-    ./bin/spark-shell
+    Java6+
 
-Try the following command, which should return 1000:
+    Scala 2.10.x
 
-    scala> sc.parallelize(1 to 1000).count()
+    Python 2.6 +
 
-## Interactive Python Shell
+    sbt ( In case of building Spark Source code)
 
-Alternatively, if you prefer Python, you can use the Python shell:
+    GIT( If you use sbt tool)
+    
+Windows environment variable setup
 
-    ./bin/pyspark
+    Set SPARK_HOME = Your Spark Path and add %SPARK_HOME%\bin in PATH in environment variables
 
-And run the following command, which should also return 1000:
+Though we aren't using Hadoop with Spark, but somewhere it checks for HADOOP_HOME variable in configuration. So to overcome this error,  we need winutils.exe and place it in any location (i.e. C:\winutils\bin\winutils.exe).
 
-    >>> sc.parallelize(range(1000)).count()
+    Set HADOOP_HOME = D:\winutils and add add %HADOOP_HOME%\bin in PATH in environment variables
 
-## Example Programs
+## Start Master and Worker on Windows
 
-Spark also comes with several sample programs in the `examples` directory.
-To run one of them, use `./bin/run-example <class> [params]`. For example:
+In Windows Power Shell, run the following command:
 
-    ./bin/run-example SparkPi
+1. Start the Master:
 
-will run the Pi example locally.
+    ./sbin/start-master.bat
 
-You can set the MASTER environment variable when running examples to submit
-examples to a cluster. This can be a mesos:// or spark:// URL,
-"yarn" to run on YARN, and "local" to run
-locally with one thread, or "local[N]" to run locally with N threads. You
-can also use an abbreviated class name if the class is in the `examples`
-package. For instance:
+Change the command in start-master.bat to your spark path
+E:\github\pk1983\spark\bin\spark-class org.apache.spark.deploy.master.Master
 
-    MASTER=spark://host:7077 ./bin/run-example SparkPi
+2. Start the worker:
 
-Many of the example programs print usage help if no params are given.
+    ./sbin/start-worker.bat
 
-## Running Tests
+Change spark://172.12.100.18:7077 to your actual master url
+E:\github\pk1983\spark\bin\spark-class org.apache.spark.deploy.worker.Worker spark://172.12.100.18:7077
 
-Testing first requires [building Spark](#building-spark). Once Spark is built, tests
-can be run using:
+3. Start the spark-shell application
 
-    ./dev/run-tests
+    ./bin/spark-shell --master spark://172.12.100.18:7077
+    
+Change spark://172.12.100.18:7077 to your actual master url
 
-Please see the guidance on how to
-[run tests for a module, or individual tests](https://cwiki.apache.org/confluence/display/SPARK/Useful+Developer+Tools).
+4. See Info logs on spark-shell, run the following
 
-## A Note About Hadoop Versions
-
-Spark uses the Hadoop core library to talk to HDFS and other Hadoop-supported
-storage systems. Because the protocols have changed in different versions of
-Hadoop, you must build Spark against the same version that your cluster runs.
-
-Please refer to the build documentation at
-["Specifying the Hadoop Version"](http://spark.apache.org/docs/latest/building-spark.html#specifying-the-hadoop-version)
-for detailed guidance on building for a particular distribution of Hadoop, including
-building for particular Hive and Hive Thriftserver distributions.
-
-## Configuration
-
-Please refer to the [Configuration Guide](http://spark.apache.org/docs/latest/configuration.html)
-in the online documentation for an overview on how to configure Spark.
+    sc.setLogLevel("INFO")
